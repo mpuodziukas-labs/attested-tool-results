@@ -1,0 +1,2 @@
+{"args": {"q": "invoice status"}, "call_id": "c1", "tool": "search", "ts": 1000, "type": "call"}
+{this is not json

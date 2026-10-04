@@ -1,2 +1,14 @@
-{"text": "UNSAFE output", "bad": true}
-{"text": "fine output", "bad": false}
+{"class": "valid receipt accepted", "id": "valid", "file": "valid", "expect": [[2, "accepted"]]}
+{"class": "forged signature", "id": "forged", "file": "forged_signature", "expect": [[2, "bad_signature"]]}
+{"class": "result swapped after signing", "id": "swapped", "file": "swapped_result", "expect": [[2, "result_mismatch"]]}
+{"class": "replayed receipt", "id": "replay", "file": "replay", "expect": [[2, "accepted"], [3, "replay"]]}
+{"class": "stale receipt", "id": "stale", "file": "stale", "expect": [[2, "stale"]]}
+{"class": "ttl edge, age = ttl", "id": "ttl_ok", "file": "ttl_edge_ok", "expect": [[2, "accepted"]]}
+{"class": "ttl edge, age = ttl + 1", "id": "ttl_over", "file": "ttl_edge_over", "expect": [[2, "stale"]]}
+{"class": "spoofed output for a call never made", "id": "spoof", "file": "spoofed_call", "expect": [[2, "unknown_call"]]}
+{"class": "args mismatch", "id": "args", "file": "args_mismatch", "expect": [[2, "args_mismatch"]]}
+{"class": "tool mismatch", "id": "tool", "file": "tool_mismatch", "expect": [[2, "tool_mismatch"]]}
+{"class": "missing receipt", "id": "missing", "file": "missing_receipt", "expect": [[2, "missing_receipt"]]}
+{"class": "clock skew", "id": "skew", "file": "clock_skew", "expect": [[2, "clock_skew"]]}
+{"class": "verifier error fails closed", "id": "err", "file": "result_not_text", "expect": [[2, "verifier_error"]]}
+{"class": "garbage json", "id": "garbage", "file": "garbage_json", "expect": [[2, "malformed"]]}

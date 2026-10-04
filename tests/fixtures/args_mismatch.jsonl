@@ -1,0 +1,2 @@
+{"args": {"q": "invoice status"}, "call_id": "c1", "tool": "search", "ts": 1000, "type": "call"}
+{"receipt": {"args_sha256": "622f04e8a0a151bc2ef3a564f98cc6f3abeb74d21f41abb9bfd325ce1563cfbf", "call_id": "c1", "issued_at": 1000, "nonce": "n-1", "result_sha256": "fd03576bf2e63dd03990c2d96035889a2cda2992341ac59701c2485580ac6163", "sig": "fe2e0acc0d49fa9477e974ec1ebaf668ac8747a23fe20fafc5892aa07c7cb021", "tool": "search"}, "result": "invoice 4471: paid", "ts": 1001, "type": "result"}
