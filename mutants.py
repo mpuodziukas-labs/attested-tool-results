@@ -3,6 +3,7 @@ A control copy must pass first. A mutant that hangs past 8 s counts as killed.""
 import pathlib, shutil, subprocess, sys, tempfile
 ROOT = pathlib.Path(__file__).parent
 T = "tests/test_attest.py"
+H = "tests/test_hostile.py"
 # (name, file, text to remove, text to put in, test file that must fail)
 MUTANTS = [
     ("signature: skip the HMAC check", "attest.py", 'if not hmac.compare_digest(want, r["sig"]):', "if False:", T),
@@ -17,14 +18,26 @@ MUTANTS = [
     ("skew: no tolerance at all", "attest.py", "if age < -skew:", "if age < 0:", T),
     ("replay: nonce reuse allowed", "attest.py", 'if r["nonce"] in seen:', "if False:", T),
     ("receipt: a missing receipt is not checked", "attest.py", "if not isinstance(r, dict):", "if False:", T),
-    ("parse: a garbage line is skipped", "attest.py", '"reason": "malformed"})\n            continue',
-     '"reason": "malformed"}) if 0 else None\n            continue', T),
+    ("parse: a garbage line is skipped", "attest.py", '            out.append(_bad(n, "malformed"))\n            continue\n        if kind == "call":',
+     '            pass\n            continue\n        if kind == "call":', T),
     ("fail open: a verifier error accepts", "attest.py", 'reason = "verifier_error"', "reason = None", T),
-    ("empty: an empty transcript is accepted", "attest.py", '"verdict": "REJECT", "reason": "empty_transcript"', '"verdict": "ACCEPT", "reason": "empty_transcript"', T),
+    ("empty: an empty transcript is accepted", "attest.py", '[_bad(0, "empty_transcript")]', '[{**_bad(0, "empty_transcript"), "verdict": "ACCEPT"}]', T),
     ("cli: exit 0 even when a result is rejected", "attest.py", 'return 1 if any(r["verdict"] == "REJECT" for r in res) else 0', "return 0", T),
     ("cli: an unreadable file exits 0", "attest.py", 'print(f"REJECT cannot read transcript: {type(e).__name__}")\n        return 2',
      'print(f"REJECT cannot read transcript: {type(e).__name__}")\n        return 0', T),
     ("cli: a missing key is not an error", "attest.py", 'argv[0] != "verify" or not key:', 'argv[0] != "verify":', T),
+    ("hostile: NaN timestamps pass", "attest.py", 'return type(x) in (int, float) and math.isfinite(x)', 'return type(x) in (int, float)', H),
+    ("hostile: duplicate JSON keys are accepted", "attest.py", "        if k in d:", "        if False:", H),
+    ("hostile: unknown fields on a result pass", "attest.py", "    if not set(e) <= RESULT_KEYS:", "    if False:", H),
+    ("hostile: unknown fields in a receipt pass", "attest.py", "    if not set(r) <= RECEIPT_KEYS:", "    if False:", H),
+    ("hostile: a call can be answered twice", "attest.py", 'if r["call_id"] in answered:', "if False:", H),
+    ("hostile: a receipt may predate its call", "attest.py", 'if r["issued_at"] < call["ts"] - skew:', "if False:", H),
+    ("hostile: a duplicate call id is kept silently", "attest.py", "            if cid in calls:", "            if False:", H),
+    ("hostile: lines split on unicode separators", "attest.py", 'f.read().split("\\n")', "f.read().splitlines()", H),
+    ("hostile: a deep parse error is not caught", "attest.py", "except (ValueError, KeyError, TypeError, RecursionError):", "except (ValueError, KeyError, TypeError):", H),
+    ("hostile: args hash ignores the depth limit", "attest.py", "    if depth > MAX_DEPTH:", "    if False:", H),
+    ("hostile: floats allowed in args", "attest.py", '    raise ValueError("type not allowed in args")', '    return repr(o)', H),
+    ("hostile: the CLI prints raw call ids", "attest.py", "return cid if cid == \"?\" or SAFE_ID.fullmatch(cid) else json.dumps(cid)", "return cid", H),
 ]
 
 

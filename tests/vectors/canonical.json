@@ -1,0 +1,74 @@
+{
+ "args": [
+  {
+   "name": "ascii keys sorted",
+   "args": {
+    "b": 1,
+    "a": [
+     true,
+     null,
+     "x"
+    ]
+   },
+   "canonical": "{\"a\":[true,null,\"x\"],\"b\":1}",
+   "sha256": "54a65415ad370228851a1da4b31b6fd42dc58b19a50d35cae759325f7388ce64"
+  },
+  {
+   "name": "non-ascii text kept as utf-8",
+   "args": {
+    "q": "caf\u00e9",
+    "n": 1
+   },
+   "canonical": "{\"n\":1,\"q\":\"caf\u00e9\"}",
+   "sha256": "f476d158d2a7a9611d4b067e8f9685769db7141ae62f7a5359208d0903372865"
+  },
+  {
+   "name": "keys ordered by utf-16 units",
+   "args": {
+    "\uffff": 1,
+    "\ud800\udc00": 2
+   },
+   "canonical": "{\"\ud800\udc00\":2,\"\uffff\":1}",
+   "sha256": "72406deb9e8efdb3b2d8b80c26ebd8d609a5338250baa8308cab44bbe7506499"
+  },
+  {
+   "name": "control and quote escapes",
+   "args": {
+    "s": "a\"b\\c\n\t\u001f"
+   },
+   "canonical": "{\"s\":\"a\\\"b\\\\c\\n\\t\\u001f\"}",
+   "sha256": "53aff44a6266b956feb803e82228c609644293ee4d59955690513f1e65ff5b5d"
+  },
+  {
+   "name": "empty containers",
+   "args": {
+    "a": {},
+    "b": []
+   },
+   "canonical": "{\"a\":{},\"b\":[]}",
+   "sha256": "aeeba1e56a144077f89e26c930dad7cf933e9383cfb8e33ddff618233b29be76"
+  },
+  {
+   "name": "negative and zero ints",
+   "args": {
+    "n": -5,
+    "z": 0
+   },
+   "canonical": "{\"n\":-5,\"z\":0}",
+   "sha256": "c9f13a25c6ea085a333bfd99c8f64a412911cef788bb23b1e1a1a466ed18fdf6"
+  }
+ ],
+ "mac": {
+  "key": "synthetic-demo-key-not-a-secret",
+  "fields": {
+   "call_id": "c1",
+   "tool": "search",
+   "args_sha256": "54a65415ad370228851a1da4b31b6fd42dc58b19a50d35cae759325f7388ce64",
+   "result_sha256": "fd03576bf2e63dd03990c2d96035889a2cda2992341ac59701c2485580ac6163",
+   "issued_at": 1000,
+   "nonce": "n-1"
+  },
+  "canonical": "{\"args_sha256\":\"54a65415ad370228851a1da4b31b6fd42dc58b19a50d35cae759325f7388ce64\",\"call_id\":\"c1\",\"issued_at\":1000,\"nonce\":\"n-1\",\"result_sha256\":\"fd03576bf2e63dd03990c2d96035889a2cda2992341ac59701c2485580ac6163\",\"tool\":\"search\"}",
+  "sig": "2bc95916583de6656218e9171d1dc9496d485a7db202ce9dd06c2af3afb20898"
+ }
+}

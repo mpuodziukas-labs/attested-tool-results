@@ -11,7 +11,7 @@ def rows():
     for raw in (HERE / "cases.jsonl").read_text().splitlines():
         c = json.loads(raw)
         text = (HERE / "tests" / "fixtures" / f"{c['file']}.jsonl").read_text()
-        got = [[r["line"], r["reason"]] for r in verify(text.splitlines(), KEY.decode())]
+        got = [[r["line"], r["reason"]] for r in verify(text.split("\n"), KEY.decode())]
         out.append((c["class"], c["id"], got == c["expect"]))
     return out
 
