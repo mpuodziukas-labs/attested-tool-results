@@ -1,4 +1,4 @@
-# REVIEW-ATTEST: hostile review, attested-tool-results @ 92c49a7 (branch work/20261004-proves)
+# Hostile review, attested-tool-results @ 92c49a7
 
 Run every command from the repo root, prefixed with `ulimit -u 700; nice -n 10 timeout 120`. Baseline: `bash run.sh` rc 0 in 9.1 s, evaluate 14/14, mutants 18/18 reproduced.
 Counts: kill 0, high 1, med 9, pass 3.

@@ -3,10 +3,10 @@ $ python3 -m pytest -q tests/test_attest.py --tb=short
 
 ==================================== ERRORS ====================================
 ____________________ ERROR collecting tests/test_attest.py _____________________
-ImportError while importing test module '~/proof-artifacts/attested-tool-results/tests/test_attest.py'.
+ImportError while importing test module './tests/test_attest.py'.
 Hint: make sure your test modules/packages have valid Python names.
 Traceback:
-/opt/homebrew/Cellar/python@3.11/3.11.15/Frameworks/Python.framework/Versions/3.11/lib/python3.11/importlib/__init__.py:126: in import_module
+python3/importlib/__init__.py:126: in import_module
     return _bootstrap._gcd_import(name[level:], package, level)
            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 tests/test_attest.py:3: in <module>
