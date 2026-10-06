@@ -142,3 +142,25 @@ def test_a10_receipt_mac_vector():
 
 def test_a10_astral_key_sorts_by_utf16_like_jcs():
     assert attest.canon_args({"￿": 1, "\U00010000": 2}) == '{"\U00010000":2,"￿":1}'
+
+
+def _result_line_nested(depth):
+    ev = result("c1", OK, GOOD)
+    ev["result"] = "[" * depth + "]" * depth
+    s = json.dumps(ev)
+    return s.replace(json.dumps(ev["result"]), ev["result"])
+
+
+def test_a4_nesting_just_over_the_parse_limit_is_malformed_on_every_python():
+    over = attest.MAX_PARSE_DEPTH + 1
+    assert [r["reason"] for r in verify(lines([C1]) + [_result_line_nested(over)], K)] == ["malformed"]
+
+
+def test_a4_nesting_at_the_parse_limit_is_parsed():
+    at = attest.MAX_PARSE_DEPTH - 1          # the result event object itself is one level
+    assert [r["reason"] for r in verify(lines([C1]) + [_result_line_nested(at)], K)] == ["verifier_error"]
+
+
+def test_a4_brackets_inside_strings_do_not_count():
+    s = json.dumps(call("c1", args={"q": "[" * 500 + '\\"' + "{" * 500}))
+    assert "malformed" not in [r["reason"] for r in verify([s], K)]

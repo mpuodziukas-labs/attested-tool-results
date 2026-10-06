@@ -8,6 +8,7 @@ RECEIPT_KEYS = set(FIELDS) | {"sig"}
 RESULT_KEYS = {"type", "ts", "result", "receipt"}
 MAX_LINE = 4 << 20      # characters per transcript line
 MAX_DEPTH = 32          # nesting depth of call args
+MAX_PARSE_DEPTH = 64    # bracket nesting allowed in a raw line, checked before json.loads
 MAX_INT = 2 ** 53 - 1   # largest integer allowed in args (I-JSON safe range)
 SAFE_ID = re.compile(r"[A-Za-z0-9_.:-]{1,64}")
 
@@ -39,6 +40,27 @@ def canon_args(o, depth=0):
         ks = sorted(o, key=lambda k: k.encode("utf-16-be"))
         return "{" + ",".join(json.dumps(k, ensure_ascii=False) + ":" + canon_args(o[k], depth + 1) for k in ks) + "}"
     raise ValueError("type not allowed in args")
+
+
+def _check_depth(raw):
+    """Linear scan: raise ValueError when [ and { nest deeper than MAX_PARSE_DEPTH. String contents are skipped."""
+    depth, in_str, esc = 0, False, False
+    for ch in raw:
+        if in_str:
+            if esc:
+                esc = False
+            elif ch == "\\":
+                esc = True
+            elif ch == '"':
+                in_str = False
+        elif ch == '"':
+            in_str = True
+        elif ch in "[{":
+            depth += 1
+            if depth > MAX_PARSE_DEPTH:
+                raise ValueError("nesting too deep")
+        elif ch in "]}":
+            depth -= 1
 
 
 def sha(s):
@@ -117,6 +139,7 @@ def verify(lines, key, ttl=300, skew=5):
         try:
             if len(raw) > MAX_LINE:
                 raise ValueError("line too long")
+            _check_depth(raw)
             e = json.loads(raw, object_pairs_hook=_pairs, parse_constant=_const)
             kind = e["type"]
         except Dup:
