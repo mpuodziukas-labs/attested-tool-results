@@ -81,11 +81,13 @@ RED  hostile: a call can be answered twice
 RED  hostile: a receipt may predate its call
 RED  hostile: a duplicate call id is kept silently
 RED  hostile: lines split on unicode separators
-RED  hostile: a deep parse error is not caught
+RED  hostile: no nesting limit before json.loads
+RED  hostile: nesting limit raised tenfold
+RED  hostile: brackets inside strings are counted
 RED  hostile: args hash ignores the depth limit
 RED  hostile: floats allowed in args
 RED  hostile: the CLI prints raw call ids
-mutants killed 30/30
+mutants killed 32/32
 ```
 
 ## How a receipt works
@@ -95,7 +97,7 @@ The tool runner signs each reply with HMAC-SHA256 over the canonical JSON of six
 Two canonical forms are fixed, and a runner in another language must produce the same bytes. Test vectors with the expected hashes are in `tests/vectors/canonical.json`, and `tests/test_hostile.py` recomputes them with `hashlib` alone.
 
 - Receipt MAC input: the exact output of Python `json.dumps(fields, sort_keys=True, separators=(",", ":"), allow_nan=False)`, so ASCII only with `\uXXXX` escapes. `issued_at` is a finite number, and an integer is the safe choice.
-- `args_sha256`: SHA-256 of the UTF-8 bytes of the call args in RFC 8785 (JCS) form, restricted to the subset `null`, `true`, `false`, strings, integers with absolute value at most 2^53-1, arrays and objects. No spaces, object keys sorted by UTF-16 code units, strings kept as UTF-8 with only `"`, `\`, and control characters escaped (`\b \t \n \f \r`, others as lowercase `\u00xx`). Floats are rejected as `malformed` because JCS number formatting is the part runners disagree on. Nesting deeper than 32 is `malformed`.
+- `args_sha256`: SHA-256 of the UTF-8 bytes of the call args in RFC 8785 (JCS) form, restricted to the subset `null`, `true`, `false`, strings, integers with absolute value at most 2^53-1, arrays and objects. No spaces, object keys sorted by UTF-16 code units, strings kept as UTF-8 with only `"`, `\`, and control characters escaped (`\b \t \n \f \r`, others as lowercase `\u00xx`). Floats are rejected as `malformed` because JCS number formatting is the part runners disagree on. Args nested deeper than 32 are `malformed`. Any line with brackets nested deeper than 64 (string contents skipped) is `malformed` before it is parsed, so the result does not depend on the Python version's recursion limit.
 
 The transcript is one JSON object per line. `{"type": "call", "call_id", "tool", "args", "ts"}` is written by the agent harness when it issues a call. `{"type": "result", "ts", "result", "receipt"}` is the delivered reply, with `ts` the delivery time. The verifier checks, in this order:
 
@@ -145,8 +147,7 @@ This is a small deterministic verifier, not a product. The key, the transcripts 
 
 ## Hostile review 2026-10-04
 
-An outside review (RED-RUN-REVIEW.txt) found 10 defects: 1 high, 9 medium, plus 3 passes. 10 of 10 fixed, each with a test in `tests/test_hostile.py` that failed before the fix (20 failed, 1 passed) and passes after (21 passed), and 12 new mutants (30/30 killed).
-
+An outside review (RED-RUN-REVIEW.txt) found 10 defects: 1 high, 9 medium, plus 3 passes. 10 of 10 fixed, each with a test in `tests/test_hostile.py`. Run against the pre-fix code (commit 92c49a7), that file gave 22 failed, 2 passed (RED-RUN-HOSTILE.txt), and it passes after the fix. The file holds 24 tests: the 21 from the review plus 3 added for the nesting limit. The mutants went from 18 to 32, all killed.
 - A1 high: a NaN delivery time made both age checks false, so an old receipt never expired. Timestamps must now be finite numbers, and NaN and Infinity are refused at parse.
 - A2: the CLI printed an unsigned call id raw, so a newline in it forged a verdict line. Ids are escaped.
 - A3: `splitlines` cut transcripts at U+2028 and U+0085 inside strings. Lines split on `\n` only.

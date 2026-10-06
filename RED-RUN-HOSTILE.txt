@@ -1,0 +1,28 @@
+# RED run: tests/test_hostile.py against the pre-fix code (commit 92c49a7)
+$ python3 -m pytest -q --tb=no -rf tests/test_hostile.py
+
+FFFFFFFFFFFFFFFFFFF.FFF.                                                 [100%]
+=========================== short test summary info ============================
+FAILED tests/test_hostile.py::test_a1_nan_delivery_ts_is_rejected
+FAILED tests/test_hostile.py::test_a1_bad_ts_values_are_rejected
+FAILED tests/test_hostile.py::test_a1_overflowing_number_is_rejected
+FAILED tests/test_hostile.py::test_a1_nan_issued_at_is_rejected
+FAILED tests/test_hostile.py::test_a2_forged_call_id_cannot_print_a_fake_verdict_line
+FAILED tests/test_hostile.py::test_a3_unicode_line_separators_inside_a_json_string
+FAILED tests/test_hostile.py::test_a4_deep_nesting_is_a_named_reject_not_a_traceback
+FAILED tests/test_hostile.py::test_a4_deep_args_in_a_call_line_is_rejected
+FAILED tests/test_hostile.py::test_a4_oversize_line_is_rejected
+FAILED tests/test_hostile.py::test_a5_duplicate_key_is_rejected
+FAILED tests/test_hostile.py::test_a5_duplicate_key_inside_receipt_is_rejected
+FAILED tests/test_hostile.py::test_a6_unknown_field_on_result_is_rejected
+FAILED tests/test_hostile.py::test_a6_unknown_field_in_receipt_is_rejected
+FAILED tests/test_hostile.py::test_a7_a_call_answered_twice_rejects_the_second_answer
+FAILED tests/test_hostile.py::test_a8_receipt_issued_before_its_call_is_rejected
+FAILED tests/test_hostile.py::test_a8_call_ts_must_be_a_finite_number
+FAILED tests/test_hostile.py::test_a9_duplicate_call_id_is_rejected_on_the_second_call_line
+FAILED tests/test_hostile.py::test_a10_args_hash_matches_every_vector_independently
+FAILED tests/test_hostile.py::test_a10_floats_and_unsafe_integers_in_args_are_rejected
+FAILED tests/test_hostile.py::test_a10_astral_key_sorts_by_utf16_like_jcs
+FAILED tests/test_hostile.py::test_a4_nesting_just_over_the_parse_limit_is_malformed_on_every_python
+FAILED tests/test_hostile.py::test_a4_nesting_at_the_parse_limit_is_parsed
+22 failed, 2 passed in 0.06s
