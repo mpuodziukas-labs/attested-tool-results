@@ -1,0 +1,11 @@
+{
+  "expected_exit": 0,
+  "expected_line": "mutants killed 32/32",
+  "limitations": "Proves integrity and freshness, not truth: a compromised runner holding the key can sign lies. The harness must write call events and hold the verify key. One shared key means any verifier can also sign. Replay memory lasts one transcript. It checks a recorded transcript and does not stop an agent in flight.",
+  "outcome": "an agent-side verifier that accepts a tool result only when its signed receipt is valid, fresh, unseen and tied to a call the agent issued",
+  "repo": "attested-tool-results",
+  "schema": "proof-pack/1",
+  "scope": "synthetic data, fixed seed, offline",
+  "site": "https://puodziukas.dev/proof.json",
+  "verify_cmd": "bash run.sh"
+}

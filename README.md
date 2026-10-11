@@ -166,3 +166,5 @@ The workflow in .github/workflows/ci.yml runs `python evaluate.py`, `python -m p
 ## License
 
 MIT, see LICENSE.
+
+Agent verification contract: [AGENTS.md](AGENTS.md)
