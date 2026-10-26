@@ -22,5 +22,8 @@ def results():
 
 
 if __name__ == "__main__":
+    if len(sys.argv) > 1:
+        print("evaluate: unexpected argument: " + sys.argv[1], file=sys.stderr)
+        sys.exit(2)
     print(results())
     sys.exit(0 if rows() and all(ok for *_, ok in rows()) else 1)

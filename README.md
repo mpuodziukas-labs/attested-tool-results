@@ -4,6 +4,29 @@ Proves: an agent-side verifier accepts a tool result only when its signed receip
 
 An agent acts on tool output it cannot verify; a replayed, stale or spoofed tool reply steers it into a wrong action.
 
+## Ticket
+
+| Field | Value |
+|---|---|
+| Ticket | attested-tool-results 2026-10-25 |
+| Status | LIVE |
+| Severity of a false pass | A replayed, stale, forged or spoofed tool result is accepted because the evaluator printed all-N/N, and the agent acts on it with full confidence. |
+| Scope (in) | Verifying signed receipts on tool results in a recorded transcript: signature, call binding, result hash, freshness, clock skew, nonce replay and the hostile-input limits, plus the command line exit codes. |
+| Out of scope | Truth of a signed answer, a compromised runner that holds the key, session binding across transcripts and stopping an agent in flight (see Limitations). |
+| Owner | Michael Puodziukas, michael@puodziukas.dev |
+| Opened | 2026-10-04 |
+| Last verified | 2026-10-25, `\| garbage json \| 1/1 \|` |
+| Oracle | `python3 evaluate.py`, last line `\| garbage json \| 1/1 \|`; `python3 mutants.py`, last line `mutants killed 32/32` |
+| Dependencies | Runtime: Python 3 standard library only. Test: pytest. |
+| Supported platforms | macOS (both oracles measured here, rc=0); Linux through the ubuntu-latest runner in .github/workflows/ci.yml (not measured here). |
+
+## Quick start
+
+```bash
+python3 evaluate.py
+python3 mutants.py
+```
+
 ## The problem
 
 An agent reads tool output as fact. Output can reach its context from places the tool never spoke: a reply captured earlier and sent again, a reply that sat too long, text injected into the transcript that looks like a tool answer, or bytes changed between the tool and the agent. If the agent acts on any of these it takes a wrong action with full confidence.
@@ -12,27 +35,27 @@ The fix is the same one a distributed system uses for a health probe. A probe re
 
 ## Run it (60s)
 
-```
+```text
 python3 -m pip install pytest
 bash run.sh
 ```
 
 `run.sh` honors `PY`, for example `PY=python3.12 bash run.sh`. Check one transcript, with the key in the environment (exit 0 all accepted, 1 any rejected, 2 unreadable or no key):
 
-```
+```text
 ATTEST_KEY=synthetic-demo-key-not-a-secret python3 -m attest verify tests/fixtures/replay.jsonl
 ```
 
 printed:
 
-```
+```text
 ACCEPT line 2 call=c1 accepted
 REJECT line 3 call=c1 replay
 ```
 
 `bash run.sh` runs `python3 evaluate.py`, then `python3 -m pytest -q`, then `python3 mutants.py`. It exits 0 only if all three pass. `evaluate.py` printed:
 
-```
+```text
 | case | outcome as labeled |
 |---|---|
 | valid receipt accepted | 1/1 |
@@ -53,7 +76,7 @@ REJECT line 3 call=c1 replay
 
 `python3 mutants.py` printed:
 
-```
+```text
 control 2/2 test files pass unmodified
 RED  signature: skip the HMAC check
 RED  signature: accept an empty key
@@ -89,6 +112,38 @@ RED  hostile: floats allowed in args
 RED  hostile: the CLI prints raw call ids
 mutants killed 32/32
 ```
+
+## Normal procedure
+
+1. From the repo root run `python3 evaluate.py`. It checks every planted transcript against its labeled outcome, prints one table and exits with code zero only when every row reads N/N.
+2. Read the table. PASS means every row reads N/N. The last two rows of the output read exactly:
+
+```text
+| verifier error fails closed | 1/1 |
+| garbage json | 1/1 |
+```
+
+3. Run `python3 mutants.py` to prove the tests can fail. It removes one defense at a time in a scratch copy and requires the matching tests to go red. PASS ends with `mutants killed 32/32`.
+4. For the whole chain run `bash run.sh`. It runs the evaluator, the pytest suite and the mutation check, and exits 0 only if all three pass.
+
+## Abnormal procedure
+
+| Symptom | Cause | Action | Oracle |
+|---|---|---|---|
+| `evaluate.py` exits 1 and a row is short of N/N | A defense changed, so a planted case no longer gets its labeled outcome | Find the case in the table, then compare the verifier reason for that transcript with the label in `tests/fixtures/cases.jsonl` | `python3 evaluate.py` |
+| `python3 -m attest verify` exits 2 | The transcript file is unreadable or `ATTEST_KEY` is not set | Set `ATTEST_KEY` in the environment and pass an existing transcript | `python3 -m attest verify tests/fixtures/replay.jsonl` |
+| `python3 -m attest verify` exits 1 | At least one result was rejected, and each line names the reason | Read the REJECT lines and the named reasons in "How a receipt works" | `python3 -m attest verify tests/fixtures/replay.jsonl` |
+| `mutants.py` prints a LIVE line | A removed defense that the tests do not detect, which is a gap in the tests | Add or tighten a test until that line prints RED | `python3 mutants.py` |
+| `mutants.py` prints `control FAIL` or `pattern matched` | The unmodified tests fail in the copy (for example pytest is missing), or the source line a mutant targets has moved | Run `python3 -m pip install pytest`, or update the pattern in `mutants.py` | `python3 mutants.py` |
+| `run.sh` fails with the wrong interpreter | `PY` points at an interpreter that is not installed | Unset `PY` or set it to an installed interpreter | `bash run.sh` |
+
+## Emergency procedure
+
+The verifier accepted a result in production that should have been rejected: an agent acted on a replayed, stale or spoofed reply.
+
+1. Freeze: stop accepting results on the strength of this verifier, treat the shared key as exposed and record the repo commit and the transcript that misled the agent.
+2. Replay: run `python3 -m attest verify` over that transcript with the real key. If it exits 0, add the transcript as a new planted case in `fixtures_gen.py` with its labeled outcome, fix the check in `attest.py`, and add a mutant to `mutants.py`. Then run `python3 evaluate.py` and `python3 mutants.py` and expect every count N/N.
+3. Tell: the owner (michael@puodziukas.dev) and every team whose agents use this verifier. Name the missing check and the Limitations item that covers it.
 
 ## How a receipt works
 
@@ -144,6 +199,7 @@ This is a small deterministic verifier, not a product. The key, the transcripts 
 - Replay memory lasts one transcript. A receipt replayed into a different session is stopped only by the TTL and by the rule that it cannot predate its call. The MAC carries no session id, so with predictable call ids (`c1`) a receipt from another session issued after the call still fits. Use unpredictable call ids to close this.
 - Delivery time comes from the transcript. A forged delivery stamp can make an old receipt look fresh.
 - It checks a recorded transcript. It does not stop an agent in flight, and it does not read what the result says.
+- The pytest suite and `bash run.sh` were not run for the README restructuring; only `python3 evaluate.py` and `python3 mutants.py` were run.
 
 ## Hostile review 2026-10-04
 
@@ -162,6 +218,50 @@ An outside review (RED-RUN-REVIEW.txt) found 10 defects: 1 high, 9 medium, plus 
 ## CI
 
 The workflow in .github/workflows/ci.yml runs `python evaluate.py`, `python -m pytest -q` and `python mutants.py` on push and pull request.
+
+## Architecture
+
+| Path | Role | Lines |
+|---|---|---|
+| `attest.py` | Receipt verifier and command line entry point | 203 |
+| `evaluate.py` | The oracle: checks every planted transcript and prints the table | 26 |
+| `fixtures_gen.py` | Generates the planted transcripts and labels | 67 |
+| `mutants.py` | Mutation check: removes one defense per copy and requires red tests | 84 |
+| `run.sh` | Runs the evaluator, the pytest suite and the mutation check | 10 |
+| `.github/workflows/ci.yml` | CI workflow | 10 |
+| `tests/test_proof.py` | Proof tests: README matches output, mutant list, labeled outcomes | 45 |
+| `tests/test_hostile.py` | Hostile-review tests | 166 |
+| `tests/fixtures/` | Planted transcripts and their labels | none: directory |
+| `tests/vectors/` | Canonical form test vectors | none: directory |
+
+Data flow:
+
+1. `fixtures_gen.py` writes the planted transcripts and `cases.jsonl` labels into `tests/fixtures/`.
+2. `evaluate.py` runs `attest.py` over each transcript and compares each verdict with its label.
+3. `evaluate.py` prints the table and exits with code zero only when every count is N/N.
+4. `mutants.py` removes one defense at a time from a copy and requires `tests/` to go red.
+5. `run.sh` chains the evaluator, the pytest suite and the mutation check.
+
+## Test and mutation evidence
+
+Measured on 2026-10-25 on macOS by running both oracles from the repo root. Each exited with code zero (rc=0). Last line of `python3 evaluate.py`:
+
+```text
+| garbage json | 1/1 |
+```
+
+Last line of `python3 mutants.py`:
+
+```text
+mutants killed 32/32
+```
+
+## Change log
+
+| Date | Change | Oracle after |
+|---|---|---|
+| 2026-10-25 | Additive restructuring to the README standard: sections added, no old line altered | `python3 evaluate.py` last line `\| garbage json \| 1/1 \|`; `python3 mutants.py` last line `mutants killed 32/32` |
+| 2026-10-04 | Hostile review fixes (date from the Hostile review section) | none: no oracle output was recorded for that review in this README |
 
 ## License
 
