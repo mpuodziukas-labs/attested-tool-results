@@ -2,6 +2,8 @@
 
 Proves: an agent-side verifier accepts a tool result only when its signed receipt is valid, fresh, unseen, and tied to a call the agent actually issued. Verify in 60s: `bash run.sh`
 
+Where this fits: NIST AI RMF function MANAGE. Sources in SOURCES.md.
+
 An agent acts on tool output it cannot verify; a replayed, stale or spoofed tool reply steers it into a wrong action.
 
 ## Ticket
